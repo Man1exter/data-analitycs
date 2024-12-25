@@ -64,3 +64,4 @@ window = MainWindow()
 window.show()
 
 print("Aplikacja została uruchomiona. Zamknij okno aplikacji, aby kontynuować.")
+sys.exit(app.exec_())
