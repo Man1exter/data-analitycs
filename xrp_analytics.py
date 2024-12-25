@@ -1,29 +1,60 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel
+import requests
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QPushButton
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 class MainWindow(QMainWindow):
-    def __init__(self, total_supply, circulating_supply):
+    def __init__(self):
         super().__init__()
         self.setWindowTitle("XRP Analytics")
         self.setGeometry(100, 100, 800, 600)
-        layout = QVBoxLayout()
+        self.layout = QVBoxLayout()
 
         # Create a central widget and set the layout
         central_widget = QWidget()
-        central_widget.setLayout(layout)
+        central_widget.setLayout(self.layout)
         self.setCentralWidget(central_widget)
 
-        # Displaying the supply information
+        # Fetch and display data
+        self.fetch_and_display_data()
+
+        # Add a refresh button
+        refresh_button = QPushButton("Refresh Data")
+        refresh_button.clicked.connect(self.fetch_and_display_data)
+        self.layout.addWidget(refresh_button)
+
+    def fetch_and_display_data(self):
+        # Clear the layout
+        for i in reversed(range(self.layout.count())):
+            widget = self.layout.itemAt(i).widget()
+            if widget is not None:
+                widget.setParent(None)
+
+        # Fetch XRP data
         try:
-            total_label = QLabel(f"Total Supply of XRP: {total_supply}")
-            circulating_label = QLabel(f"Circulating Supply of XRP: {circulating_supply}")
-            layout.addWidget(total_label)
-            layout.addWidget(circulating_label)
+            response = requests.get('https://api.coingecko.com/api/v3/coins/ripple')
+            data = response.json()
+            total_supply = data['market_data']['total_supply']
+            circulating_supply = data['market_data']['circulating_supply']
+            current_price = data['market_data']['current_price']['usd']
+            market_cap = data['market_data']['market_cap']['usd']
+            volume_24h = data['market_data']['total_volume']['usd']
         except Exception as e:
-            print(f"Error displaying supply information: {e}")
+            print(f"Error fetching data: {e}")
             return
+
+        # Display total and circulating supply
+        total_label = QLabel(f"Total Supply of XRP: {total_supply}")
+        circulating_label = QLabel(f"Circulating Supply of XRP: {circulating_supply}")
+        price_label = QLabel(f"Current Price of XRP: ${current_price}")
+        market_cap_label = QLabel(f"Market Cap of XRP: ${market_cap}")
+        volume_24h_label = QLabel(f"24h Trading Volume of XRP: ${volume_24h}")
+        self.layout.addWidget(total_label)
+        self.layout.addWidget(circulating_label)
+        self.layout.addWidget(price_label)
+        self.layout.addWidget(market_cap_label)
+        self.layout.addWidget(volume_24h_label)
 
         # Plotting the data
         try:
@@ -36,7 +67,7 @@ class MainWindow(QMainWindow):
             ax.grid(True)
 
             canvas = FigureCanvas(fig)
-            layout.addWidget(canvas)
+            self.layout.addWidget(canvas)
 
             fig.tight_layout()
         except Exception as e:
@@ -45,11 +76,8 @@ class MainWindow(QMainWindow):
 
 # Create and display the application
 if __name__ == "__main__":
-    total_supply = 100000000  # Example value, replace with actual data
-    circulating_supply = 50000000  # Example value, replace with actual data
-
     app = QApplication(sys.argv)
-    window = MainWindow(total_supply, circulating_supply)
+    window = MainWindow()
     window.show()
 
     print("Application has started. Close the application window to continue.")
