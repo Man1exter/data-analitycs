@@ -3,6 +3,7 @@ import requests
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QPushButton
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from textblob import TextBlob
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -73,6 +74,29 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Error plotting data: {e}")
             return
+
+        # Fetch and display news
+        self.fetch_and_display_news()
+
+    def fetch_and_display_news(self):
+        try:
+            news_api_key = 'YOUR_NEWS_API_KEY'  # Replace with your News API key
+            news_url = f'https://newsapi.org/v2/everything?q=Ripple&apiKey={news_api_key}'
+            response = requests.get(news_url)
+            news_data = response.json()
+            articles = news_data['articles'][:5]  # Get the top 5 news articles
+
+            news_label = QLabel("Latest News about Ripple:")
+            self.layout.addWidget(news_label)
+
+            for article in articles:
+                title = article['title']
+                sentiment = TextBlob(title).sentiment.polarity
+                sentiment_label = "Positive" if sentiment > 0 else "Negative" if sentiment < 0 else "Neutral"
+                news_item_label = QLabel(f"{title} (Sentiment: {sentiment_label})")
+                self.layout.addWidget(news_item_label)
+        except Exception as e:
+            print(f"Error fetching news: {e}")
 
 # Create and display the application
 if __name__ == "__main__":
